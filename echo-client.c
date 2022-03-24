@@ -7,10 +7,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include "time.h"
 
 #include "err.h"
 
-#define BUFFER_SIZE 20
+#define BUFFER_SIZE 5002
 
 char shared_buffer[BUFFER_SIZE];
 
@@ -75,9 +76,24 @@ size_t receive_message(int socket_fd, struct sockaddr_in *receive_address, char 
 }
 
 
+static char *rand_string(size_t size) {
+    char* str = malloc(sizeof(char)* size);
+    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK...";
+    if (size) {
+        --size;
+        for (size_t n = 0; n < size; n++) {
+            int key = rand() % (int) (sizeof charset - 1);
+            str[n] = charset[key];
+        }
+        str[size] = '\0';
+    }
+    return str;
+}
+
+
 int main(int argc, char *argv[]) {
     if (argc < 5) {
-        fatal("Usage: %s <host> <port> <message> <package number> <data size>...\n", argv[0]);
+        fatal("Usage: %s <host> <port> <package number> <data size>...\n", argv[0]);
     }
 
     char *host = argv[1];
@@ -92,14 +108,21 @@ int main(int argc, char *argv[]) {
     char *client_ip = inet_ntoa(send_address.sin_addr);
     uint16_t client_port = ntohs(send_address.sin_port);
 
-    for (int i = 5; i < argc; i++) {
-        send_message(socket_fd, &send_address, argv[i]);
-        printf("sent to %s:%u: '%s'\n", client_ip, client_port, argv[i]);
-        memset(shared_buffer, 0, sizeof(shared_buffer)); // clean the buffer
-        size_t max_length = sizeof(shared_buffer) - 1; // leave space for the null terminator
-        size_t received_length = receive_message(socket_fd, &send_address, shared_buffer, max_length);
-        printf("received %zd bytes from %s:%u: '%s'\n", received_length, client_ip, client_port, shared_buffer);
+
+    unsigned long packages_number = strtoul(argv[3], NULL, 10);
+    PRINT_ERRNO();
+    unsigned long data_size = strtoul(argv[4], NULL, 10);
+    PRINT_ERRNO();
+
+    for (int i = 0; i < (int) packages_number; i++) {
+
+        char *random_str = rand_string(data_size + 1);
+        send_message(socket_fd, &send_address, random_str);
+        memset(shared_buffer, 0, sizeof(shared_buffer));// clean the buffer
+        free(random_str);
     }
+    printf("sent to %s:%u: %lu random_massages with %lu bytes\n", client_ip, client_port, packages_number, data_size);
+
 
     CHECK_ERRNO(close(socket_fd));
 

@@ -9,7 +9,7 @@
 
 #include "err.h"
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 5002
 
 char shared_buffer[BUFFER_SIZE];
 
@@ -36,7 +36,7 @@ int bind_socket(uint16_t port) {
 
     // bind the socket to a concrete address
     CHECK_ERRNO(bind(socket_fd, (struct sockaddr *) &server_address,
-                        (socklen_t) sizeof(server_address)));
+                     (socklen_t) sizeof(server_address)));
 
     return socket_fd;
 }
@@ -73,17 +73,35 @@ int main(int argc, char *argv[]) {
 
     int socket_fd = bind_socket(port);
 
+//    FILE *fp = fopen("result.txt", "ab+");
+//    if (fp == NULL) {
+//        fatal("Could not open file");
+//    }
+
     struct sockaddr_in client_address;
     size_t read_length;
     do {
+        memset(shared_buffer, 0, sizeof(shared_buffer)); // clean the buffer
         read_length = read_message(socket_fd, &client_address, shared_buffer, sizeof(shared_buffer));
-        char* client_ip = inet_ntoa(client_address.sin_addr);
-        uint16_t client_port = ntohs(client_address.sin_port);
-        printf("received %zd bytes from client %s:%u: '%.*s'\n", read_length, client_ip, client_port,
-               (int) read_length, shared_buffer); // note: we specify the length of the printed string
-        send_message(socket_fd, &client_address, shared_buffer, read_length);
+
+        FILE *fp = fopen("result.txt", "ab+");
+        if (fp == NULL) {
+            fatal("Could not open file");
+        }
+
+        if (strcmp(shared_buffer, "__exit__\n") == 0)
+            break;
+        fputs(shared_buffer, fp);
+        fputs("\n\n", fp);
+
+
+        printf("%zd\n", read_length); // note: we specify the length of the printed string
+        //send_message(socket_fd, &client_address, shared_buffer, read_length);
+        fclose(fp);
 
     } while (read_length > 0);
+
+//    fclose(fp);
     printf("finished exchange\n");
 
     CHECK_ERRNO(close(socket_fd));
