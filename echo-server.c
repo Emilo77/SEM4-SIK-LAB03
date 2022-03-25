@@ -89,8 +89,8 @@ int main(int argc, char *argv[]) {
             fatal("Could not open file");
         }
 
-        if (strcmp(shared_buffer, "__exit__\n") == 0)
-            break;
+//        if (strncmp(shared_buffer, "__exit__", 8) == 0)
+//            break;
         fputs(shared_buffer, fp);
         fputs("\n\n", fp);
 
