@@ -11,7 +11,7 @@
 
 #include "err.h"
 
-#define BUFFER_SIZE 5002
+#define BUFFER_SIZE 90000
 
 char shared_buffer[BUFFER_SIZE];
 
