@@ -93,7 +93,7 @@ static char *rand_string(size_t size) {
 
 int main(int argc, char *argv[]) {
     if (argc < 5) {
-        fatal("Usage: %s <host> <port> <package number> <data size>...\n", argv[0]);
+        fatal("Usage: %s <host> <port> <packages number> <data size>...\n", argv[0]);
     }
 
     char *host = argv[1];
